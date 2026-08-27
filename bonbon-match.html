@@ -321,7 +321,7 @@
     el.style.background = candy.bg;
     el.textContent = candy.emoji;
     positionTile(el, r, c);
-    el.addEventListener('click', () => onTileClick(r,c));
+    el.onclick = () => onTileClick(r,c);
     tilesLayer.appendChild(el);
     return el;
   }
