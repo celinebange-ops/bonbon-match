@@ -272,6 +272,55 @@
     return Math.floor(Math.random()*CANDIES.length);
   }
 
+  function hasAnyMove(){
+    for (let r=0; r<SIZE; r++){
+      for (let c=0; c<SIZE; c++){
+        if (c+1<SIZE){
+          swapGrid(r,c,r,c+1);
+          const found = findMatches().size > 0;
+          swapGrid(r,c,r,c+1);
+          if (found) return true;
+        }
+        if (r+1<SIZE){
+          swapGrid(r,c,r+1,c);
+          const found = findMatches().size > 0;
+          swapGrid(r,c,r+1,c);
+          if (found) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function buildSolvableGrid(){
+    let g;
+    do {
+      g = [];
+      for (let r=0; r<SIZE; r++){
+        const row = [];
+        for (let c=0; c<SIZE; c++){
+          let t;
+          do {
+            t = randType();
+          } while (
+            (c>=2 && row[c-1]===t && row[c-2]===t) ||
+            (r>=2 && g[r-1] && g[r-1][c]===t && g[r-2] && g[r-2][c]===t)
+          );
+          row.push(t);
+        }
+        g.push(row);
+      }
+      grid = g;
+    } while (!hasAnyMove());
+  }
+
+  function reshuffleIfStuck(){
+    if (!hasAnyMove()){
+      buildSolvableGrid();
+      renderAll();
+    }
+  }
+
   function newGame(){
     measure();
     score = 0;
@@ -282,21 +331,7 @@
     scoreEl.textContent = 0;
     movesEl.textContent = movesLeft;
 
-    grid = [];
-    for (let r=0; r<SIZE; r++){
-      const row = [];
-      for (let c=0; c<SIZE; c++){
-        let t;
-        do {
-          t = randType();
-        } while (
-          (c>=2 && row[c-1]===t && row[c-2]===t) ||
-          (r>=2 && grid[r-1] && grid[r-1][c]===t && grid[r-2] && grid[r-2][c]===t)
-        );
-        row.push(t);
-      }
-      grid.push(row);
-    }
+    buildSolvableGrid();
     renderAll();
   }
 
@@ -369,6 +404,7 @@
         movesLeft--;
         movesEl.textContent = movesLeft;
         resolveMatches(matches, () => {
+          if (movesLeft>0) reshuffleIfStuck();
           busy = false;
           if (movesLeft<=0) endGame();
         });
