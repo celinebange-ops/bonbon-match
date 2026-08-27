@@ -242,7 +242,7 @@
   ];
   const START_MOVES = 20;
 
-  let grid, score, best, movesLeft, cellPx, gapPx, selected, busy;
+  let grid, tileEls, score, best, movesLeft, cellPx, gapPx, selected, busy;
   const boardEl = document.getElementById('board');
   const gridBg = document.getElementById('gridBg');
   const tilesLayer = document.getElementById('tilesLayer');
@@ -339,6 +339,7 @@
 
   function renderAll(){
     tilesLayer.innerHTML = '';
+    tileEls = Array.from({length:SIZE}, () => Array(SIZE).fill(null));
     for (let r=0; r<SIZE; r++){
       for (let c=0; c<SIZE; c++){
         createTileEl(r,c,grid[r][c],true);
@@ -358,6 +359,7 @@
     positionTile(el, r, c);
     el.onclick = () => onTileClick(r,c);
     tilesLayer.appendChild(el);
+    tileEls[r][c] = el;
     return el;
   }
 
@@ -368,7 +370,7 @@
     el.style.top = r*(cellPx+gapPx) + 'px';
   }
 
-  function getTileEl(r,c){ return document.getElementById(tileId(r,c)); }
+  function getTileEl(r,c){ return tileEls[r][c]; }
 
   function onTileClick(r,c){
     if (busy || movesLeft<=0) return;
@@ -426,6 +428,8 @@
     elA.dataset.r = r1; elA.dataset.c = c1;
     elB.id = tileId(r0,c0);
     elB.dataset.r = r0; elB.dataset.c = c0;
+    tileEls[r1][c1] = elA;
+    tileEls[r0][c0] = elB;
     positionTile(elA, r1, c1);
     positionTile(elB, r0, c0);
     elA.onclick = () => onTileClick(r1,c1);
@@ -485,6 +489,7 @@
         const [r,c] = key.split('_').map(Number);
         const el = getTileEl(r,c);
         if (el) el.remove();
+        tileEls[r][c] = null;
       });
       collapseAndRefill(() => {
         const next = findMatches();
@@ -503,14 +508,17 @@
       for (let r=SIZE-1; r>=0; r--){
         if (grid[r][c] !== -1){
           if (writeRow !== r){
-            grid[writeRow][c] = grid[r][c];
+            const targetRow = writeRow;
+            grid[targetRow][c] = grid[r][c];
             grid[r][c] = -1;
             const el = getTileEl(r,c);
+            tileEls[r][c] = null;
             if (el){
-              el.id = tileId(writeRow,c);
-              el.dataset.r = writeRow;
-              el.onclick = () => onTileClick(writeRow,c);
-              positionTile(el, writeRow, c);
+              el.id = tileId(targetRow,c);
+              el.dataset.r = targetRow;
+              el.onclick = () => onTileClick(targetRow,c);
+              tileEls[targetRow][c] = el;
+              positionTile(el, targetRow, c);
             }
           }
           writeRow--;
